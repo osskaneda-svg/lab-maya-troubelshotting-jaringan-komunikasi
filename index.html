@@ -451,6 +451,7 @@ Gunakan tombol di bawah untuk memulai.
 
 <script>
 
+
 const output = document.getElementById("output");
 
 function setCommand(value) {
@@ -487,30 +488,34 @@ function animateNetwork() {
 
     setTimeout(() => {
         stopAnimation();
-        document.getElementById("status").textContent =
-        "● Paket data berhasil mencapai tujuan!";
-    }, 2800);
+    }, 3500);
 }
 
 function runCommand() {
-
     const command = document.getElementById("command")
-    .value.trim().toLowerCase();
+        .value.trim().toLowerCase();
 
     const parts = command.split(/\s+/);
+    const validIP = /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/;
 
     if (parts.length !== 2 ||
         !["ping","tracert"].includes(parts[0]) ||
-        !/^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/.test(parts[1])) {
-
-        writeOutput("\nPerintah tidak dikenali!");
-        writeOutput("Gunakan: ping [alamat IP]");
-        writeOutput("Atau: tracert [alamat IP]");
+        !validIP.test(parts[1])) {
+        writeOutput("Perintah tidak valid!");
         return;
     }
 
     const type = parts[0];
     const ip = parts[1];
+
+    // Daftar IP yang berhasil dalam simulasi
+    const successIPs = [
+        "192.168.1.1",
+        "192.168.1.10",
+        "192.168.1.20"
+    ];
+
+    const success = successIPs.includes(ip);
 
     document.getElementById("ip").textContent = ip;
     document.getElementById("connection").textContent = "Memproses...";
@@ -518,63 +523,98 @@ function runCommand() {
     document.getElementById("rtt").textContent = "-";
 
     animateNetwork();
-
     writeOutput("\nC:\\> " + command);
 
     if (type === "ping") {
-
         writeOutput("Pinging " + ip + " with 32 bytes of data:");
 
-        setTimeout(() => {
-            writeOutput("Reply from " + ip + ": bytes=32 time=12ms TTL=128");
-            document.getElementById("ttl").textContent = "128";
-            document.getElementById("rtt").textContent = "12 ms";
-            document.getElementById("connection").textContent = "Terhubung";
-        }, 1000);
+        if (success) {
+            let count = 0;
 
-        setTimeout(() => {
-            writeOutput("Reply from " + ip + ": bytes=32 time=15ms TTL=128");
-        }, 1800);
+            const timer = setInterval(() => {
+                count++;
+                const time = [12,15,10][count-1];
 
-        setTimeout(() => {
-            writeOutput("Reply from " + ip + ": bytes=32 time=10ms TTL=128");
-            writeOutput("\nPing statistics:");
-            writeOutput("Packets: Sent = 3, Received = 3, Lost = 0");
-            writeOutput("Simulasi selesai.");
-        }, 2600);
+                writeOutput(
+                    "Reply from " + ip +
+                    ": bytes=32 time=" + time + "ms TTL=128"
+                );
 
-    } else {
+                document.getElementById("ttl").textContent = "128";
+                document.getElementById("rtt").textContent = time + " ms";
+                document.getElementById("connection").textContent = "Terhubung";
 
+                if (count === 3) {
+                    clearInterval(timer);
+                    writeOutput("Packets: Sent = 3, Received = 3, Lost = 0");
+                    document.getElementById("status").textContent =
+                        "● Paket berhasil mencapai tujuan!";
+                }
+            }, 900);
+
+        } else {
+            let count = 0;
+
+            const timer = setInterval(() => {
+                count++;
+                writeOutput("Request timed out.");
+
+                if (count === 3) {
+                    clearInterval(timer);
+                    writeOutput("Packets: Sent = 3, Received = 0, Lost = 3");
+                    document.getElementById("connection").textContent = "Gagal";
+                    document.getElementById("ttl").textContent = "-";
+                    document.getElementById("rtt").textContent = "Timeout";
+                    document.getElementById("status").textContent =
+                        "● Tidak ada balasan dari tujuan!";
+                }
+            }, 900);
+        }
+    }
+
+    if (type === "tracert") {
         writeOutput("Tracing route to " + ip);
-        writeOutput("over a maximum of 30 hops:");
 
-        const hops = [
-            "1    2 ms    1 ms    2 ms    192.168.1.1",
-            "2    5 ms    4 ms    5 ms    10.10.0.1",
-            "3   12 ms   10 ms   12 ms    " + ip
-        ];
+        if (success) {
+            const hops = [
+                "1    2 ms    1 ms    2 ms    192.168.1.1",
+                "2    5 ms    4 ms    5 ms    10.10.0.1",
+                "3   12 ms   10 ms   12 ms    " + ip
+            ];
 
-        hops.forEach((hop,index) => {
+            hops.forEach((hop,index) => {
+                setTimeout(() => writeOutput(hop), (index+1)*900);
+            });
+
             setTimeout(() => {
-                writeOutput(hop);
-            }, (index + 1) * 900);
-        });
+                document.getElementById("connection").textContent = "Jalur ditemukan";
+                document.getElementById("ttl").textContent = "3 Hop";
+                document.getElementById("rtt").textContent = "12 ms";
+                document.getElementById("status").textContent =
+                    "● Jalur berhasil ditemukan!";
+                writeOutput("Trace complete.");
+            }, 3200);
 
-        setTimeout(() => {
-            document.getElementById("connection").textContent = "Jalur ditemukan";
-            document.getElementById("ttl").textContent = "3 Hop";
-            document.getElementById("rtt").textContent = "12 ms";
-            writeOutput("\nTrace complete.");
-            writeOutput("Simulasi selesai.");
-        }, 3200);
+        } else {
+            writeOutput("1    2 ms    2 ms    3 ms    192.168.1.1");
+            writeOutput("2    *        *        *       Request timed out.");
+            writeOutput("3    *        *        *       Request timed out.");
+
+            document.getElementById("connection").textContent = "Gagal";
+            document.getElementById("ttl").textContent = "-";
+            document.getElementById("rtt").textContent = "Timeout";
+            document.getElementById("status").textContent =
+                "● Tujuan tidak merespons!";
+            writeOutput("Trace complete.");
+        }
     }
 }
 
 document.getElementById("command").addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-        runCommand();
-    }
+    if (event.key === "Enter") runCommand();
 });
+
+        
 
 </script>
 
