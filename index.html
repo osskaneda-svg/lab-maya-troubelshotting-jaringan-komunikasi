@@ -1,0 +1,582 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAB MAYA TKJ - Troubleshooting Jaringan</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #071426;
+    color: #eaf4ff;
+}
+
+header {
+    background: #102b4c;
+    padding: 25px 15px;
+    text-align: center;
+    border-bottom: 3px solid #16a9ff;
+}
+
+header h1 {
+    color: #35b9ff;
+    font-size: 28px;
+    letter-spacing: 2px;
+}
+
+header p {
+    margin-top: 8px;
+    color: #b8d5ef;
+    font-size: 13px;
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 18px;
+}
+
+.section {
+    background: #10233b;
+    padding: 18px;
+    margin-bottom: 18px;
+    border: 1px solid #21466c;
+    border-radius: 12px;
+}
+
+h2 {
+    color: #35b9ff;
+    font-size: 19px;
+    margin-bottom: 15px;
+}
+
+h3 {
+    color: #74d1ff;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.topology {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    padding: 15px 0;
+}
+
+.device {
+    text-align: center;
+    min-width: 65px;
+    position: relative;
+}
+
+.device-icon {
+    font-size: 35px;
+    background: #173d62;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #368bc4;
+}
+
+.device p {
+    font-size: 11px;
+    margin-top: 8px;
+}
+
+.line {
+    width: 35px;
+    height: 3px;
+    background: #378dc9;
+    position: relative;
+}
+
+.packet {
+    width: 11px;
+    height: 11px;
+    background: #ffe45c;
+    border-radius: 50%;
+    position: absolute;
+    top: -4px;
+    left: 0;
+    display: none;
+    box-shadow: 0 0 12px #ffe45c;
+}
+
+.line.active .packet {
+    display: block;
+    animation: travel .8s linear infinite;
+}
+
+@keyframes travel {
+    from { left: 0; }
+    to { left: calc(100% - 10px); }
+}
+
+.terminal {
+    background: #020b13;
+    border-radius: 9px;
+    padding: 15px;
+    min-height: 220px;
+    border: 1px solid #28516f;
+}
+
+.terminal-title {
+    color: #42db91;
+    margin-bottom: 12px;
+    font-weight: bold;
+}
+
+#output {
+    height: 160px;
+    overflow-y: auto;
+    color: #a5f4c7;
+    font-size: 12px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+}
+
+.command-area {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+input {
+    flex: 1;
+    min-width: 0;
+    background: #071426;
+    color: white;
+    border: 1px solid #3988b9;
+    border-radius: 7px;
+    padding: 12px;
+    outline: none;
+}
+
+button {
+    border: none;
+    border-radius: 7px;
+    padding: 11px 15px;
+    background: #078bd5;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:active {
+    transform: scale(.96);
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.btn-green {
+    background: #138a61;
+}
+
+.btn-red {
+    background: #bd4141;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+    gap: 12px;
+}
+
+.info-card {
+    background: #173451;
+    padding: 14px;
+    border-radius: 9px;
+    border-left: 3px solid #26aaff;
+}
+
+.info-card p {
+    color: #bdd2e7;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.info-card strong {
+    color: #5fc9ff;
+    display: block;
+    margin-bottom: 7px;
+}
+
+.status {
+    color: #43df9c;
+    font-weight: bold;
+    margin-top: 12px;
+    font-size: 13px;
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: #91acc4;
+    font-size: 12px;
+}
+
+@media(max-width:480px) {
+    header h1 {
+        font-size: 22px;
+    }
+
+    .device-icon {
+        font-size: 25px;
+        padding: 9px;
+    }
+
+    .line {
+        width: 16px;
+    }
+
+    .command-area {
+        flex-direction: column;
+    }
+
+    .command-area button {
+        width: 100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>LAB MAYA TKJ</h1>
+    <p>SIMULASI TROUBLESHOOTING JARINGAN KOMPUTER</p>
+    <p>Belajar Jaringan Komputer Secara Interaktif</p>
+</header>
+
+<div class="container">
+
+    <div class="section">
+        <h2>🌐 Topologi Jaringan</h2>
+        <p style="font-size:13px;color:#bdd2e7;margin-bottom:15px">
+            Perhatikan perjalanan paket data dari komputer menuju server.
+        </p>
+
+        <div class="topology">
+
+            <div class="device">
+                <div class="device-icon">💻</div>
+                <p>PC Client</p>
+            </div>
+
+            <div class="line" id="line1">
+                <div class="packet"></div>
+            </div>
+
+            <div class="device">
+                <div class="device-icon">🔀</div>
+                <p>Switch</p>
+            </div>
+
+            <div class="line" id="line2">
+                <div class="packet"></div>
+            </div>
+
+            <div class="device">
+                <div class="device-icon">📡</div>
+                <p>Router</p>
+            </div>
+
+            <div class="line" id="line3">
+                <div class="packet"></div>
+            </div>
+
+            <div class="device">
+                <div class="device-icon">🖥️</div>
+                <p>Server</p>
+            </div>
+
+        </div>
+
+        <div class="status" id="status">
+            ● Menunggu perintah simulasi...
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💻 Terminal Simulasi</h2>
+
+        <div class="terminal">
+            <div class="terminal-title">● TKJ NETWORK TERMINAL</div>
+
+            <div id="output">
+LAB MAYA TKJ v1.0
+Selamat datang di simulasi jaringan!
+
+Ketik perintah:
+ping 192.168.1.10
+tracert 192.168.1.10
+
+Gunakan tombol di bawah untuk memulai.
+            </div>
+        </div>
+
+        <div class="command-area">
+            <input id="command"
+            type="text"
+            placeholder="Masukkan perintah..."
+            value="ping 192.168.1.10">
+
+            <button onclick="runCommand()">Jalankan</button>
+        </div>
+
+        <div class="buttons">
+            <button onclick="setCommand('ping 192.168.1.10')">
+                Ping
+            </button>
+
+            <button class="btn-green"
+            onclick="setCommand('tracert 192.168.1.10')">
+                Traceroute
+            </button>
+
+            <button class="btn-red" onclick="clearTerminal()">
+                Hapus Terminal
+            </button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📊 Informasi Hasil Simulasi</h2>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <strong>IP Tujuan</strong>
+                <p id="ip">192.168.1.10</p>
+            </div>
+
+            <div class="info-card">
+                <strong>Status Koneksi</strong>
+                <p id="connection">Menunggu...</p>
+            </div>
+
+            <div class="info-card">
+                <strong>TTL</strong>
+                <p id="ttl">-</p>
+            </div>
+
+            <div class="info-card">
+                <strong>RTT</strong>
+                <p id="rtt">-</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📚 Mengenal Perangkat Jaringan</h2>
+
+        <div class="info-grid">
+
+            <div class="info-card">
+                <strong>💻 PC Client</strong>
+                <p>Komputer yang digunakan pengguna untuk mengirim dan menerima data melalui jaringan.</p>
+            </div>
+
+            <div class="info-card">
+                <strong>🔀 Switch</strong>
+                <p>Menghubungkan beberapa perangkat dalam satu jaringan lokal (LAN).</p>
+            </div>
+
+            <div class="info-card">
+                <strong>📡 Router</strong>
+                <p>Menghubungkan jaringan yang berbeda dan menentukan jalur pengiriman paket.</p>
+            </div>
+
+            <div class="info-card">
+                <strong>🖥️ Server</strong>
+                <p>Komputer yang menyediakan layanan atau sumber daya bagi perangkat lain.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📖 Materi Pembelajaran</h2>
+
+        <h3>1. Apa itu Ping?</h3>
+        <p style="font-size:13px;line-height:1.8;color:#c3d8ec">
+        Ping merupakan perintah untuk menguji konektivitas antara
+        perangkat dengan alamat IP tujuan menggunakan protokol ICMP.
+        </p>
+
+        <br>
+
+        <h3>2. Apa itu Traceroute?</h3>
+        <p style="font-size:13px;line-height:1.8;color:#c3d8ec">
+        Traceroute merupakan perintah untuk mengetahui jalur yang
+        dilewati paket data dari perangkat sumber menuju tujuan.
+        </p>
+
+        <br>
+
+        <h3>3. Apa itu TTL?</h3>
+        <p style="font-size:13px;line-height:1.8;color:#c3d8ec">
+        Time To Live adalah nilai yang membatasi jumlah hop
+        yang dapat dilewati sebuah paket sebelum dihentikan.
+        </p>
+
+        <br>
+
+        <h3>4. Apa itu RTT?</h3>
+        <p style="font-size:13px;line-height:1.8;color:#c3d8ec">
+        Round Trip Time adalah waktu yang diperlukan paket untuk
+        pergi menuju tujuan dan mendapatkan balasan kembali.
+        </p>
+    </div>
+
+</div>
+
+<footer>
+    LAB MAYA TKJ © 2026<br>
+    Media Pembelajaran Interaktif Teknik Komputer dan Jaringan
+</footer>
+
+<script>
+
+const output = document.getElementById("output");
+
+function setCommand(value) {
+    document.getElementById("command").value = value;
+    runCommand();
+}
+
+function writeOutput(text) {
+    output.textContent += "\n" + text;
+    output.scrollTop = output.scrollHeight;
+}
+
+function clearTerminal() {
+    output.textContent = "Terminal dibersihkan.\nSiap menjalankan simulasi.";
+}
+
+function stopAnimation() {
+    document.querySelectorAll(".line").forEach(line => {
+        line.classList.remove("active");
+    });
+}
+
+function animateNetwork() {
+    stopAnimation();
+
+    document.getElementById("status").textContent =
+    "● Paket data sedang berjalan...";
+
+    ["line1","line2","line3"].forEach((id,index) => {
+        setTimeout(() => {
+            document.getElementById(id).classList.add("active");
+        }, index * 650);
+    });
+
+    setTimeout(() => {
+        stopAnimation();
+        document.getElementById("status").textContent =
+        "● Paket data berhasil mencapai tujuan!";
+    }, 2800);
+}
+
+function runCommand() {
+
+    const command = document.getElementById("command")
+    .value.trim().toLowerCase();
+
+    const parts = command.split(/\s+/);
+
+    if (parts.length !== 2 ||
+        !["ping","tracert"].includes(parts[0]) ||
+        !/^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/.test(parts[1])) {
+
+        writeOutput("\nPerintah tidak dikenali!");
+        writeOutput("Gunakan: ping [alamat IP]");
+        writeOutput("Atau: tracert [alamat IP]");
+        return;
+    }
+
+    const type = parts[0];
+    const ip = parts[1];
+
+    document.getElementById("ip").textContent = ip;
+    document.getElementById("connection").textContent = "Memproses...";
+    document.getElementById("ttl").textContent = "-";
+    document.getElementById("rtt").textContent = "-";
+
+    animateNetwork();
+
+    writeOutput("\nC:\\> " + command);
+
+    if (type === "ping") {
+
+        writeOutput("Pinging " + ip + " with 32 bytes of data:");
+
+        setTimeout(() => {
+            writeOutput("Reply from " + ip + ": bytes=32 time=12ms TTL=128");
+            document.getElementById("ttl").textContent = "128";
+            document.getElementById("rtt").textContent = "12 ms";
+            document.getElementById("connection").textContent = "Terhubung";
+        }, 1000);
+
+        setTimeout(() => {
+            writeOutput("Reply from " + ip + ": bytes=32 time=15ms TTL=128");
+        }, 1800);
+
+        setTimeout(() => {
+            writeOutput("Reply from " + ip + ": bytes=32 time=10ms TTL=128");
+            writeOutput("\nPing statistics:");
+            writeOutput("Packets: Sent = 3, Received = 3, Lost = 0");
+            writeOutput("Simulasi selesai.");
+        }, 2600);
+
+    } else {
+
+        writeOutput("Tracing route to " + ip);
+        writeOutput("over a maximum of 30 hops:");
+
+        const hops = [
+            "1    2 ms    1 ms    2 ms    192.168.1.1",
+            "2    5 ms    4 ms    5 ms    10.10.0.1",
+            "3   12 ms   10 ms   12 ms    " + ip
+        ];
+
+        hops.forEach((hop,index) => {
+            setTimeout(() => {
+                writeOutput(hop);
+            }, (index + 1) * 900);
+        });
+
+        setTimeout(() => {
+            document.getElementById("connection").textContent = "Jalur ditemukan";
+            document.getElementById("ttl").textContent = "3 Hop";
+            document.getElementById("rtt").textContent = "12 ms";
+            writeOutput("\nTrace complete.");
+            writeOutput("Simulasi selesai.");
+        }, 3200);
+    }
+}
+
+document.getElementById("command").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        runCommand();
+    }
+});
+
+</script>
+
+</body>
+</html>
